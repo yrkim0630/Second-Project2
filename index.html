@@ -1,1 +1,571 @@
 <h1>안녕. 나는 예륜이야.</h1>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디지털 시계, 타이머 & 메모장</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 1);
+        }
+        /* Glassmorphism Effect */
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between p-4 sm:p-6 select-none">
+
+    <header class="w-full max-w-3xl mx-auto mt-2 mb-6">
+        <nav class="glass rounded-2xl p-1.5 flex justify-around sm:justify-center sm:space-x-2 border border-slate-800">
+            <button onclick="switchTab('clock')" id="tab-clock" class="tab-btn active text-sm sm:text-base font-semibold px-3 sm:px-5 py-2.5 rounded-xl border-b-2 border-transparent transition-all flex items-center gap-2 hover:text-blue-400">
+                <i class="fa-regular fa-clock"></i> <span class="hidden sm:inline">시계</span>
+            </button>
+            <button onclick="switchTab('stopwatch')" id="tab-stopwatch" class="tab-btn text-sm sm:text-base font-semibold px-3 sm:px-5 py-2.5 rounded-xl border-b-2 border-transparent text-slate-400 transition-all flex items-center gap-2 hover:text-blue-400">
+                <i class="fa-solid fa-stopwatch"></i> <span class="hidden sm:inline">스톱워치</span>
+            </button>
+            <button onclick="switchTab('timer')" id="tab-timer" class="tab-btn text-sm sm:text-base font-semibold px-3 sm:px-5 py-2.5 rounded-xl border-b-2 border-transparent text-slate-400 transition-all flex items-center gap-2 hover:text-blue-400">
+                <i class="fa-solid fa-hourglass-half"></i> <span class="hidden sm:inline">타이머</span>
+            </button>
+            <button onclick="switchTab('note')" id="tab-note" class="tab-btn text-sm sm:text-base font-semibold px-3 sm:px-5 py-2.5 rounded-xl border-b-2 border-transparent text-slate-400 transition-all flex items-center gap-2 hover:text-blue-400">
+                <i class="fa-regular fa-note-sticky"></i> <span class="hidden sm:inline">메모장</span>
+            </button>
+        </nav>
+    </header>
+
+    <main class="w-full max-w-3xl mx-auto flex-1 flex flex-col justify-center items-center">
+
+        <!-- ==================== 1. DIGITAL CLOCK SECTION ==================== -->
+        <section id="sec-clock" class="w-full flex flex-col items-center justify-center">
+            <div class="glass w-full rounded-3xl p-8 sm:p-12 text-center shadow-2xl flex flex-col items-center relative overflow-hidden">
+                <div id="clock-date" class="text-slate-400 text-lg sm:text-xl font-medium tracking-wide mb-2">
+                    2026년 9월 28일 월요일
+                </div>
+                <div id="clock-time" class="font-mono text-5xl sm:text-7xl font-bold tracking-tight text-slate-50 my-4 drop-shadow-md">
+                    00:00:00
+                </div>
+                <div class="flex items-center gap-4 mt-2">
+                    <div id="clock-ampm" class="text-blue-400 font-semibold text-base sm:text-lg uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-lg border border-blue-500/20">
+                        AM
+                    </div>
+                    <!-- 12h / 24h Toggle -->
+                    <button onclick="toggle24Hour()" id="clock-mode-btn" class="text-xs font-semibold px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition">
+                        24시간 모드 전환
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 2. STOPWATCH SECTION ==================== -->
+        <section id="sec-stopwatch" class="w-full hidden flex-col items-center">
+            <div class="glass w-full rounded-3xl p-8 sm:p-10 text-center shadow-2xl flex flex-col items-center mb-6">
+                <div id="sw-display" class="font-mono text-5xl sm:text-7xl font-bold tracking-tight text-slate-50 my-4">
+                    00:00<span class="text-2xl sm:text-4xl text-slate-400">.00</span>
+                </div>
+                <!-- Controls -->
+                <div class="flex gap-3 sm:gap-4 mt-6">
+                    <button id="sw-start-btn" onclick="toggleStopwatch()" class="w-24 sm:w-28 py-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                        <i id="sw-start-icon" class="fa-solid fa-play text-sm"></i> <span id="sw-start-text">시작</span>
+                    </button>
+                    <button id="sw-lap-btn" onclick="recordLap()" disabled class="w-24 sm:w-28 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-slate-200 font-semibold rounded-xl transition flex items-center justify-center gap-2 border border-slate-700">
+                        <i class="fa-solid fa-flag text-sm"></i> 랩
+                    </button>
+                    <button onclick="resetStopwatch()" class="w-24 sm:w-28 py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-semibold rounded-xl transition flex items-center justify-center gap-2 border border-slate-700">
+                        <i class="fa-solid fa-rotate-right text-sm"></i> 리셋
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lap Times List -->
+            <div id="sw-laps-container" class="w-full glass rounded-2xl p-4 max-h-48 overflow-y-auto hidden">
+                <div class="text-xs uppercase font-semibold text-slate-400 px-4 py-2 flex justify-between border-b border-slate-800">
+                    <span>랩 번호</span>
+                    <span>시간</span>
+                </div>
+                <ul id="sw-laps-list" class="divide-y divide-slate-800/50 font-mono text-sm">
+                    <!-- Laps injected via JS -->
+                </ul>
+            </div>
+        </section>
+
+        <!-- ==================== 3. TIMER SECTION ==================== -->
+        <section id="sec-timer" class="w-full hidden flex-col items-center">
+            <div class="glass w-full rounded-3xl p-8 sm:p-10 text-center shadow-2xl flex flex-col items-center relative overflow-hidden">
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-6">
+                    <div id="timer-progress-bar" class="bg-blue-500 h-full w-full transition-all duration-1000"></div>
+                </div>
+
+                <div id="timer-display" class="font-mono text-5xl sm:text-7xl font-bold tracking-tight text-slate-50 my-2">
+                    00:00:00
+                </div>
+
+                <!-- Inputs (visible when reset/stopped) -->
+                <div id="timer-inputs" class="flex items-center gap-2 my-4">
+                    <div class="flex flex-col items-center">
+                        <input type="number" id="tm-hours" min="0" max="99" value="0" class="w-16 h-12 bg-slate-800/80 border border-slate-700 rounded-xl text-center text-xl font-mono text-slate-100 focus:outline-none focus:border-blue-500">
+                        <span class="text-xs text-slate-400 mt-1">시간</span>
+                    </div>
+                    <span class="text-2xl font-mono text-slate-500 mb-5">:</span>
+                    <div class="flex flex-col items-center">
+                        <input type="number" id="tm-minutes" min="0" max="59" value="0" class="w-16 h-12 bg-slate-800/80 border border-slate-700 rounded-xl text-center text-xl font-mono text-slate-100 focus:outline-none focus:border-blue-500">
+                        <span class="text-xs text-slate-400 mt-1">분</span>
+                    </div>
+                    <span class="text-2xl font-mono text-slate-500 mb-5">:</span>
+                    <div class="flex flex-col items-center">
+                        <input type="number" id="tm-seconds" min="0" max="59" value="0" class="w-16 h-12 bg-slate-800/80 border border-slate-700 rounded-xl text-center text-xl font-mono text-slate-100 focus:outline-none focus:border-blue-500">
+                        <span class="text-xs text-slate-400 mt-1">초</span>
+                    </div>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="flex gap-2 mb-6">
+                    <button onclick="addPresetTime(1)" class="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs text-slate-300 transition">+1분</button>
+                    <button onclick="addPresetTime(5)" class="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs text-slate-300 transition">+5분</button>
+                    <button onclick="addPresetTime(10)" class="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs text-slate-300 transition">+10분</button>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex gap-4">
+                    <button id="tm-start-btn" onclick="toggleTimer()" class="w-28 py-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                        <i id="tm-start-icon" class="fa-solid fa-play text-sm"></i> <span id="tm-start-text">시작</span>
+                    </button>
+                    <button onclick="resetTimer()" class="w-28 py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-semibold rounded-xl transition flex items-center justify-center gap-2 border border-slate-700">
+                        <i class="fa-solid fa-rotate-right text-sm"></i> 리셋
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 4. NOTEPAD SECTION ==================== -->
+        <section id="sec-note" class="w-full hidden flex-col items-center">
+            <div class="glass w-full rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col">
+                <!-- Top Toolbar -->
+                <div class="flex justify-between items-center pb-4 mb-4 border-b border-slate-800">
+                    <div class="flex items-center gap-2 text-slate-300 font-semibold">
+                        <i class="fa-solid fa-pen-to-square text-blue-400"></i> 빠른 메모
+                    </div>
+                    <!-- Auto-save indicator -->
+                    <div id="note-status" class="text-xs text-slate-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-check text-green-500"></i> 저장됨
+                    </div>
+                </div>
+
+                <!-- Textarea -->
+                <textarea id="note-input" placeholder="여기에 중요한 메모나 생각들을 자유롭게 적어보세요..." class="w-full h-64 bg-slate-900/60 text-slate-100 placeholder-slate-500 rounded-2xl p-4 border border-slate-800 focus:outline-none focus:border-blue-500 resize-none font-sans leading-relaxed text-sm sm:text-base selection:bg-blue-500 selection:text-white mb-4"></textarea>
+
+                <!-- Bottom Bar Controls -->
+                <div class="flex flex-wrap justify-between items-center gap-3">
+                    <div class="text-xs text-slate-400 font-mono">
+                        글자 수: <span id="note-char-count" class="text-slate-200 font-bold">0</span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="downloadNote()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center gap-1.5 active:scale-95">
+                            <i class="fa-solid fa-download text-slate-400"></i> .txt 다운로드
+                        </button>
+                        <button onclick="clearNote()" class="px-3.5 py-2 bg-red-900/30 hover:bg-red-800/50 text-red-300 text-xs font-semibold rounded-xl border border-red-800/40 transition flex items-center gap-1.5 active:scale-95">
+                            <i class="fa-solid fa-trash-can text-red-400"></i> 지우기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-slate-500 text-xs text-center my-4">
+        &copy; <span id="footer-year"></span> Digital Clock, Timer & Notepad. Designed for GitHub Pages.
+    </footer>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+        // Audio Synth for alarm sound
+        function playAlarmSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioCtx.currentTime;
+                
+                [0, 0.2, 0.4, 0.6].forEach(delay => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, now + delay);
+                    
+                    gain.gain.setValueAtTime(0.3, now + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.15);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now + delay);
+                    osc.stop(now + delay + 0.15);
+                });
+            } catch (e) {
+                console.error("Audio Web API Error: ", e);
+            }
+        }
+
+        /* ----------------------------------------------------
+         * TAB SWITCHING LOGIC
+         * ---------------------------------------------------- */
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.add('text-slate-400'));
+            
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('text-slate-400');
+
+            document.getElementById('sec-clock').classList.add('hidden');
+            document.getElementById('sec-stopwatch').classList.add('hidden');
+            document.getElementById('sec-timer').classList.add('hidden');
+            document.getElementById('sec-note').classList.add('hidden');
+
+            const targetSection = document.getElementById(`sec-${tabName}`);
+            targetSection.classList.remove('hidden');
+            targetSection.classList.add('flex');
+        }
+
+        /* ----------------------------------------------------
+         * 1. DIGITAL CLOCK LOGIC
+         * ---------------------------------------------------- */
+        let is24HourMode = false;
+
+        function toggle24Hour() {
+            is24HourMode = !is24HourMode;
+            document.getElementById('clock-mode-btn').textContent = is24HourMode ? '12시간 모드 전환' : '24시간 모드 전환';
+            document.getElementById('clock-ampm').style.display = is24HourMode ? 'none' : 'block';
+            updateClock();
+        }
+
+        function updateClock() {
+            const now = new Date();
+            
+            const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const dayName = days[now.getDay()];
+            
+            document.getElementById('clock-date').textContent = `${year}년 ${month}월 ${date}일 ${dayName}`;
+
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            if (is24HourMode) {
+                const hoursFormatted = String(hours).padStart(2, '0');
+                document.getElementById('clock-time').textContent = `${hoursFormatted}:${minutes}:${seconds}`;
+            } else {
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                const hoursFormatted = String(hours).padStart(2, '0');
+
+                document.getElementById('clock-time').textContent = `${hoursFormatted}:${minutes}:${seconds}`;
+                document.getElementById('clock-ampm').textContent = ampm;
+            }
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        /* ----------------------------------------------------
+         * 2. STOPWATCH LOGIC
+         * ---------------------------------------------------- */
+        let swInterval = null;
+        let swStartTime = 0;
+        let swElapsedTime = 0;
+        let swIsRunning = false;
+        let swLapCount = 0;
+
+        function toggleStopwatch() {
+            if (swIsRunning) {
+                clearInterval(swInterval);
+                swIsRunning = false;
+                document.getElementById('sw-start-text').textContent = '시작';
+                document.getElementById('sw-start-icon').className = 'fa-solid fa-play text-sm';
+                document.getElementById('sw-start-btn').classList.replace('bg-amber-600', 'bg-blue-600');
+                document.getElementById('sw-start-btn').classList.replace('hover:bg-amber-500', 'hover:bg-blue-500');
+                document.getElementById('sw-lap-btn').disabled = true;
+            } else {
+                swStartTime = Date.now() - swElapsedTime;
+                swInterval = setInterval(updateStopwatch, 10);
+                swIsRunning = true;
+                document.getElementById('sw-start-text').textContent = '일시정지';
+                document.getElementById('sw-start-icon').className = 'fa-solid fa-pause text-sm';
+                document.getElementById('sw-start-btn').classList.replace('bg-blue-600', 'bg-amber-600');
+                document.getElementById('sw-start-btn').classList.replace('hover:bg-blue-500', 'hover:bg-amber-500');
+                document.getElementById('sw-lap-btn').disabled = false;
+            }
+        }
+
+        function updateStopwatch() {
+            swElapsedTime = Date.now() - swStartTime;
+            
+            const minutes = String(Math.floor(swElapsedTime / 60000)).padStart(2, '0');
+            const seconds = String(Math.floor((swElapsedTime % 60000) / 1000)).padStart(2, '0');
+            const milliseconds = String(Math.floor((swElapsedTime % 1000) / 10)).padStart(2, '0');
+
+            document.getElementById('sw-display').innerHTML = `${minutes}:${seconds}<span class="text-2xl sm:text-4xl text-slate-400">.${milliseconds}</span>`;
+        }
+
+        function resetStopwatch() {
+            clearInterval(swInterval);
+            swIsRunning = false;
+            swElapsedTime = 0;
+            swLapCount = 0;
+
+            document.getElementById('sw-display').innerHTML = `00:00<span class="text-2xl sm:text-4xl text-slate-400">.00</span>`;
+            document.getElementById('sw-start-text').textContent = '시작';
+            document.getElementById('sw-start-icon').className = 'fa-solid fa-play text-sm';
+            document.getElementById('sw-start-btn').className = 'w-24 sm:w-28 py-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold rounded-xl transition shadow-lg flex items-center justify-center gap-2';
+            document.getElementById('sw-lap-btn').disabled = true;
+
+            const lapsContainer = document.getElementById('sw-laps-container');
+            const lapsList = document.getElementById('sw-laps-list');
+            lapsList.innerHTML = '';
+            lapsContainer.classList.add('hidden');
+        }
+
+        function recordLap() {
+            if (!swIsRunning) return;
+            
+            swLapCount++;
+            const lapsContainer = document.getElementById('sw-laps-container');
+            const lapsList = document.getElementById('sw-laps-list');
+
+            lapsContainer.classList.remove('hidden');
+
+            const minutes = String(Math.floor(swElapsedTime / 60000)).padStart(2, '0');
+            const seconds = String(Math.floor((swElapsedTime % 60000) / 1000)).padStart(2, '0');
+            const milliseconds = String(Math.floor((swElapsedTime % 1000) / 10)).padStart(2, '0');
+            const lapTimeStr = `${minutes}:${seconds}.${milliseconds}`;
+
+            const li = document.createElement('li');
+            li.className = 'px-4 py-2 flex justify-between text-slate-300 hover:bg-slate-800/40 transition';
+            li.innerHTML = `<span>랩 ${swLapCount}</span><span>${lapTimeStr}</span>`;
+
+            lapsList.prepend(li);
+        }
+
+        /* ----------------------------------------------------
+         * 3. TIMER LOGIC
+         * ---------------------------------------------------- */
+        let tmInterval = null;
+        let tmTotalSeconds = 0;
+        let tmRemainingSeconds = 0;
+        let tmIsRunning = false;
+
+        function updateTimerDisplay() {
+            const hours = String(Math.floor(tmRemainingSeconds / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((tmRemainingSeconds % 3600) / 60)).padStart(2, '0');
+            const seconds = String(tmRemainingSeconds % 60).padStart(2, '0');
+
+            document.getElementById('timer-display').textContent = `${hours}:${minutes}:${seconds}`;
+
+            // Update Progress Bar
+            const progressBar = document.getElementById('timer-progress-bar');
+            if (tmTotalSeconds > 0) {
+                const percentage = (tmRemainingSeconds / tmTotalSeconds) * 100;
+                progressBar.style.width = `${percentage}%`;
+            } else {
+                progressBar.style.width = '100%';
+            }
+        }
+
+        function addPresetTime(minutes) {
+            if (tmIsRunning) return;
+            const minInput = document.getElementById('tm-minutes');
+            let currentVal = parseInt(minInput.value) || 0;
+            minInput.value = Math.min(59, currentVal + minutes);
+            syncInputsToDisplay();
+        }
+
+        function syncInputsToDisplay() {
+            const h = parseInt(document.getElementById('tm-hours').value) || 0;
+            const m = parseInt(document.getElementById('tm-minutes').value) || 0;
+            const s = parseInt(document.getElementById('tm-seconds').value) || 0;
+            
+            tmTotalSeconds = (h * 3600) + (m * 60) + s;
+            tmRemainingSeconds = tmTotalSeconds;
+            updateTimerDisplay();
+        }
+
+        ['tm-hours', 'tm-minutes', 'tm-seconds'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                if (!tmIsRunning) syncInputsToDisplay();
+            });
+        });
+
+        function toggleTimer() {
+            if (tmIsRunning) {
+                clearInterval(tmInterval);
+                tmIsRunning = false;
+                document.getElementById('tm-start-text').textContent = '재개';
+                document.getElementById('tm-start-icon').className = 'fa-solid fa-play text-sm';
+                document.getElementById('tm-start-btn').classList.replace('bg-amber-600', 'bg-blue-600');
+                document.getElementById('tm-start-btn').classList.replace('hover:bg-amber-500', 'hover:bg-blue-500');
+                document.getElementById('timer-inputs').classList.remove('hidden');
+            } else {
+                if (tmRemainingSeconds <= 0) {
+                    syncInputsToDisplay();
+                }
+
+                if (tmRemainingSeconds <= 0) return;
+
+                tmIsRunning = true;
+                document.getElementById('tm-start-text').textContent = '일시정지';
+                document.getElementById('tm-start-icon').className = 'fa-solid fa-pause text-sm';
+                document.getElementById('tm-start-btn').classList.replace('bg-blue-600', 'bg-amber-600');
+                document.getElementById('tm-start-btn').classList.replace('hover:bg-blue-500', 'hover:bg-amber-500');
+                document.getElementById('timer-inputs').classList.add('hidden');
+
+                tmInterval = setInterval(() => {
+                    tmRemainingSeconds--;
+                    updateTimerDisplay();
+
+                    if (tmRemainingSeconds <= 0) {
+                        clearInterval(tmInterval);
+                        tmIsRunning = false;
+                        playAlarmSound();
+                        
+                        document.getElementById('timer-display').classList.add('text-red-500', 'animate-pulse');
+                        setTimeout(() => {
+                            document.getElementById('timer-display').classList.remove('text-red-500', 'animate-pulse');
+                        }, 4000);
+
+                        resetTimerUI();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimerUI() {
+            document.getElementById('tm-start-text').textContent = '시작';
+            document.getElementById('tm-start-icon').className = 'fa-solid fa-play text-sm';
+            document.getElementById('tm-start-btn').className = 'w-28 py-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold rounded-xl transition shadow-lg flex items-center justify-center gap-2';
+            document.getElementById('timer-inputs').classList.remove('hidden');
+        }
+
+        function resetTimer() {
+            clearInterval(tmInterval);
+            tmIsRunning = false;
+            
+            document.getElementById('tm-hours').value = 0;
+            document.getElementById('tm-minutes').value = 0;
+            document.getElementById('tm-seconds').value = 0;
+            
+            tmTotalSeconds = 0;
+            tmRemainingSeconds = 0;
+            
+            updateTimerDisplay();
+            resetTimerUI();
+        }
+
+        /* ----------------------------------------------------
+         * 4. NOTEPAD LOGIC
+         * ---------------------------------------------------- */
+        const noteInput = document.getElementById('note-input');
+        const noteCharCount = document.getElementById('note-char-count');
+        const noteStatus = document.getElementById('note-status');
+        let saveTimeout = null;
+
+        // Load note from LocalStorage
+        function loadNote() {
+            const savedNote = localStorage.getItem('user_note');
+            if (savedNote !== null) {
+                noteInput.value = savedNote;
+            }
+            updateCharCount();
+        }
+
+        function updateCharCount() {
+            noteCharCount.textContent = noteInput.value.length.toLocaleString();
+        }
+
+        // Auto Save Note
+        noteInput.addEventListener('input', () => {
+            updateCharCount();
+            
+            noteStatus.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-amber-400"></i> 저장 중...`;
+
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                localStorage.setItem('user_note', noteInput.value);
+                noteStatus.innerHTML = `<i class="fa-solid fa-check text-green-500"></i> 저장됨`;
+            }, 600);
+        });
+
+        // Clear Note
+        function clearNote() {
+            if (noteInput.value.trim() === '') return;
+            noteInput.value = '';
+            localStorage.removeItem('user_note');
+            updateCharCount();
+            noteStatus.innerHTML = `<i class="fa-solid fa-check text-green-500"></i> 저장됨`;
+        }
+
+        // Download Note as .txt
+        function downloadNote() {
+            const text = noteInput.value;
+            if (!text.trim()) return;
+
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+            
+            a.href = url;
+            a.download = `memo_${dateStr}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initial Note Load
+        loadNote();
+    </script>
+</body>
+</html>
